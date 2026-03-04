@@ -1,3 +1,16 @@
 EBO1/ebo_gpt/.env
 EBO2/ebo_gpt/.env
 EBO2/games_venv/
+# Ignorar carpetas de dependencias (pesan mucho)
+node_modules/
+bin/
+obj/
+
+# Ignorar archivos temporales del sistema
+.DS_Store
+Thumbs.db
+
+# Ignorar archivos de configuración personal o secretos
+.env
+*.log
+dist/

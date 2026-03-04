@@ -1,0 +1,22 @@
+# Endpoints for implements interfaces
+GPT.Endpoints=tcp -p 11315
+
+
+# Proxies for required interfaces
+EboMoodsProxy = ebomoods:tcp -h 192.168.3.23 -p 11516
+EmotionalMotorProxy = emotionalmotor:tcp -h 192.168.3.23 -p 10945  # EBO2
+SpeechProxy = speech:tcp -h 192.168.3.23 -p 11339  # EBO2
+LEDArrayProxy = ledarray:tcp -h 192.168.3.23 -p 10991
+
+
+
+
+
+
+Ice.Warn.Connections=0
+Ice.Trace.Network=0
+Ice.Trace.Protocol=0
+Ice.MessageSizeMax=20004800
+
+
+

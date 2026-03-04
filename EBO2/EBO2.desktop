@@ -2,7 +2,7 @@
 Version=1.0
 Type=Application
 Name=EBO2
-Exec=/tu-ruta-completa/ebo_serious_games/EBO2/iniciar_juegos.sh
-Icon=/tu-ruta-completa/ebo_serious_games/EBO2/happy_sinfondo.png
+Exec=/home/rosa/ebo_serious_games/EBO2/iniciar_juegos.sh
+Icon=/home/rosa/ebo_serious_games/EBO2/happy_sinfondo.png
 Terminal=true
 

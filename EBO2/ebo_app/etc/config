@@ -1,11 +1,11 @@
 # Proxies for required interfaces
-DifferentialRobotProxy = differentialrobot:tcp -h 192.168.50.33 -p 10004
-EboMoodsProxy = ebomoods:tcp -h 192.168.50.33 -p 11516
-EmotionalMotorProxy = emotionalmotor:tcp -h 192.168.50.33 -p 10945
+DifferentialRobotProxy = differentialrobot:tcp -h 192.168.3.109 -p 10004
+EboMoodsProxy = ebomoods:tcp -h 192.168.3.109 -p 11516
+EmotionalMotorProxy = emotionalmotor:tcp -h 192.168.3.109 -p 10945
 GPTProxy = gpt:tcp -h localhost -p 11315
-LEDArrayProxy = ledarray:tcp -h 192.168.50.33 -p 10991
-SpeechProxy = speech:tcp -h 192.168.50.33 -p 11339
-EboASRProxy = eboasr:tcp -h 192.168.50.33 -p 13455
+LEDArrayProxy = ledarray:tcp -h 192.168.3.109 -p 10991
+SpeechProxy = speech:tcp -h 192.168.3.109 -p 11339
+EboASRProxy = eboasr:tcp -h 192.168.3.109 -p 13455
 
 
 

@@ -639,7 +639,6 @@ class SpecificWorker(GenericWorker):
         self.sounds["click"].play()
         self.ui2.dificultad_elegida.setText("Dificultad elegida: Fácil")
         print("Dificultad elegida: Fácil")
-
     def medio_clicked(self):
         self.dificultad = "medio"
         self.sounds["click"].play()

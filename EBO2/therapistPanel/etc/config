@@ -1,0 +1,17 @@
+
+# Endpoints for implements interfaces
+therapistPanel.Endpoints=tcp -p 15490
+# Proxies for required interfaces
+GestorSGProxy = gestorsg:tcp -h localhost -p 16299
+
+
+
+
+
+Period.Compute = 100
+Period.Emergency = 500
+
+Ice.Warn.Connections = "0"
+Ice.Trace.Network = "0"
+Ice.Trace.Protocol = "0"
+Ice.MessageSizeMax = "20004800"

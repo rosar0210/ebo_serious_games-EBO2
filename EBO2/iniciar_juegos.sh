@@ -30,16 +30,32 @@ scripts["APP_JUEGOS"]="app_juegos.py"
 rutas["EBO_APP"]="$BASE_DIR/ebo_app"
 scripts["EBO_APP"]="ebo_app.py"
 
+rutas["therapistPanel"]="$BASE_DIR/therapistPanel"
+scripts["therapistPanel"]="therapistPanel.py"
+
 # Función para abrir una pestaña en gnome-terminal con entorno virtual
 function abrir_pestana {
-    gnome-terminal --tab -- bash -c "
-        cd '$1' &&
-        echo 'Activando games_venv...' &&
-	source '$BASE_DIR/games_venv/bin/activate' &&
-        echo 'Ejecutando en $2' &&
-        src/$3 etc/config;
-        exec bash
-    "
+    if [ "$2" == "therapistPanel" ]; then
+        # CASO 1: Es el Panel del Terapeuta (carpeta generated + venv)
+        gnome-terminal --tab -- bash -c "
+            cd '$1' &&
+            echo 'Activando games_venv...' &&
+            source '$BASE_DIR/games_venv/bin/activate' &&
+            echo 'Iniciando Therapist Panel en generated...' &&
+            python3 generated/$3 etc/config;
+            exec bash
+        "
+    else      
+        # CASO 2: Resto de componentes (carpeta src + venv)
+        gnome-terminal --tab -- bash -c "
+            cd '$1' &&
+            echo 'Activando games_venv...' &&
+            source '$BASE_DIR/games_venv/bin/activate' &&
+            echo 'Ejecutando en $2' &&
+            python3 src/$3 etc/config;
+            exec bash
+        "
+    fi
 }
 
 # Iterar sobre las rutas y abrir pestañas

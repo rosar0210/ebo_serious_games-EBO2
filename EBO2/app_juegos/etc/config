@@ -7,7 +7,7 @@ JuegoSimonSayProxy = juegosimonsay:tcp -h localhost -p 15490
 PasapalabraProxy = pasapalabra:tcp -h localhost -p 18743
 StoryTellingProxy = storytelling:tcp -h localhost -p 16758
 
-ip = 192.168.50.33
+ip = 192.168.3.109
 
 
 

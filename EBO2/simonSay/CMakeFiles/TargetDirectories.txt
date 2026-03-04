@@ -1,6 +1,0 @@
-/home/robolab/Desktop/EBO_SG/simonSay/CMakeFiles/ui_mainUI.dir
-/home/robolab/Desktop/EBO_SG/simonSay/CMakeFiles/edit_cache.dir
-/home/robolab/Desktop/EBO_SG/simonSay/CMakeFiles/rebuild_cache.dir
-/home/robolab/Desktop/EBO_SG/simonSay/src/CMakeFiles/ICES__home_robolab_Desktop_EBO_SG_simonSay_src.dir
-/home/robolab/Desktop/EBO_SG/simonSay/src/CMakeFiles/edit_cache.dir
-/home/robolab/Desktop/EBO_SG/simonSay/src/CMakeFiles/rebuild_cache.dir

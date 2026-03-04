@@ -14,3 +14,18 @@ Thumbs.db
 .env
 *.log
 dist/
+# Editor de código
+.idea/
+.vscode/
+*.iml
+
+# Python
+__pycache__/
+*.pyc
+
+# Compilación y temporales
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+/EBO2/therapistPanel/CMakeFiles/

@@ -1,6 +1,0 @@
-/home/robolab/Desktop/EBO_SG/storytelling/CMakeFiles/ui_mainUI.dir
-/home/robolab/Desktop/EBO_SG/storytelling/CMakeFiles/edit_cache.dir
-/home/robolab/Desktop/EBO_SG/storytelling/CMakeFiles/rebuild_cache.dir
-/home/robolab/Desktop/EBO_SG/storytelling/src/CMakeFiles/ICES__home_robolab_Desktop_EBO_SG_storytelling_src.dir
-/home/robolab/Desktop/EBO_SG/storytelling/src/CMakeFiles/edit_cache.dir
-/home/robolab/Desktop/EBO_SG/storytelling/src/CMakeFiles/rebuild_cache.dir

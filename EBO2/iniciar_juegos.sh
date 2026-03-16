@@ -1,4 +1,6 @@
 #!/bin/bash
+pkill -f "python3 generated/therapistPanel.py"  # Limpia procesos colgados
+
 export ROBOCOMP=/opt/robocomp # para evitar logs incomodos
 
 # Obtener la ruta del directorio donde se encuentra el script

@@ -29,3 +29,13 @@ CMakeCache.txt
 cmake_install.cmake
 Makefile
 /EBO2/therapistPanel/CMakeFiles/
+EBO2/therapistPanel/therapy_control/
+*.csv
+
+# Archivos de backup
+*.bak
+
+# Resultados y logs locales
+EBO2/simonSay/resultados_juego.json
+EBO2/ebo_gpt/conversaciones/
+EBO2/storytelling/src/memoria/

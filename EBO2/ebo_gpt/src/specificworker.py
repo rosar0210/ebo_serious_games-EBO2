@@ -62,7 +62,7 @@ class SpecificWorker(GenericWorker):
         self.model_fast = os.getenv("OPENAI_FAST_MODEL", "gpt-5-mini")  # Fase A
         self.model_full = os.getenv("OPENAI_FULL_MODEL", "gpt-5-mini")  # Fase B
         self.phase_a_params = {"max_completion_tokens": 24}
-        self.phase_b_params = {"max_completion_tokens": 8000}
+        self.phase_b_params = {"max_completion_tokens": 20000}
 
         self.conversacion_en_curso = False
         self.asisstantName  = ""

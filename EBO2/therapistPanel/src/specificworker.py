@@ -29,6 +29,7 @@ import interfaces as ifaces
 import csv
 from datetime import datetime
 import os
+import json
 
 # Rutas de UIs y logos
 UI_MENU     = "../../igs/therapistPanel.ui"
@@ -71,9 +72,25 @@ class SpecificWorker(GenericWorker):
         if not os.path.exists(self.log_dir):
             os.makedirs(self.log_dir)
 
+        self.backup_path = os.path.join(self.log_dir, ".session_recovery.json")
+
+        # Intentar recuperar datos al arrancar
+        self.recuperar_estado_tras_reinicio()
+
         # 2. UI e hilos
         self.ui = self.therapistPanel_ui()
         self.update_ui_signal.connect(self.handle_update_ui)
+
+    def recuperar_estado_tras_reinicio(self):
+        if os.path.exists(self.backup_path):
+            try:
+                with open(self.backup_path, 'r') as f:
+                    data = json.load(f)
+                    self.counts = data["counts"]
+                    self.registrosesion = data["registros"]
+                print("--- SESIÓN RECUPERADA TRAS REINICIO DE IP ---")
+            except:
+                pass
 
     def eventFilter (self, obj, event):
         """ Captura el cierre de la ventana principal """
@@ -94,23 +111,33 @@ class SpecificWorker(GenericWorker):
         return super().eventFilter(obj, event)
 
     def solicitar_residencia_y_guardar(self):
-        # Usamos QtWidgets.QInputDialog directamente
+        # 1. Pedir el nombre del centro
         nombre, ok = QtWidgets.QInputDialog.getText(
             self.ui, "Finalizar sesión",
             "Introduzca el nombre del Centro:",
             text="Centro"
         )
 
-        # Guardamos el nombre (o uno por defecto si cancela)
-        self.residencianame = nombre if (ok and nombre) else ""
+        # 2. Si el usuario pulsa 'OK' (Aceptar)
+        if ok:
+            # Si dejó el nombre vacío pero dio a OK
+            self.residencianame = nombre if nombre.strip() else "Centro_No_Especificado"
 
-        # Ejecutamos el guardado final
-        self.guardarSesionFinal()
+            # Ejecutamos el guardado final en el CSV
+            self.guardarSesionFinal()
 
-        # Cerramos la aplicación
-        self.ui.removeEventFilter(self)
-        self.ui.close()
-        QApplication.quit()
+            # Cerramos la aplicación
+            self.ui.removeEventFilter(self)
+            self.ui.close()
+            QApplication.quit()
+        else:
+            # 3. Si pulsa 'Cancel' (Cancelar)
+            console.print("[yellow]⚠ Cierre cancelado por el usuario. No se ha creado el archivo CSV.[/yellow]")
+
+            self.ui.removeEventFilter(self)
+            self.ui.close()
+            QApplication.quit()
+
 
     def guardarSesionFinal(self):
         """ Guarda un CSV final con todos los pacientes registrados durante la jornada """
@@ -143,23 +170,46 @@ class SpecificWorker(GenericWorker):
         except Exception as e:
             console.print(f"[bold red]❌ Error al guardar log final: {e}[/bold red]")
 
+        try:
+            # ... (escritura del CSV) ...
+            console.print(f"[bold green]✅ Archivo final guardado: {path_final}[/bold green]")
+
+            # BORRAR EL BACKUP AL TERMINAR CON ÉXITO
+            if os.path.exists(self.backup_path):
+                os.remove(self.backup_path)
+
+        except Exception as e:
+            console.print(f"[bold red]❌ Error al guardar log final: {e}[/bold red]")
+
 ################################################# LOGICA DE BOTONES #################################################################################################
+    def hacer_backup_inmediato(self):
+        """Guarda el estado actual por si el script .sh cierra la terminal"""
+        estado = {
+            "counts": self.counts,
+            "registros": self.registrosesion
+        }
+        with open(self.backup_path, 'w') as f:
+            json.dump(estado, f)
 
     def atencion_clicked(self):
         self.counts["atencion_button"] += 1
         print(f"Atencion: {self.counts['atencion_button']}")
+        self.hacer_backup_inmediato()
 
     def comprension_clicked(self):
         self.counts["comprension_button"] += 1
         print(f"Comprension: {self.counts['comprension_button']}")
+        self.hacer_backup_inmediato()
 
     def frustracion_clicked(self):
         self.counts["frustracion_button"] += 1
         print(f"Frustracion: {self.counts['frustracion_button']}")
+        self.hacer_backup_inmediato()
 
     def apoyo_clicked(self):
         self.counts["apoyo_button"] += 1
         print(f"Apoyo: {self.counts['apoyo_button']}")
+        self.hacer_backup_inmediato()
 
     def paciente_clicked(self):
         """ Registra al paciente que acaba de finalizar su sesión """

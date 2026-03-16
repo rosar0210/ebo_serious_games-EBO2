@@ -167,20 +167,39 @@ class SpecificWorker(GenericWorker):
     def configurar_ip(self):
         ruta_actual = os.getcwd()
         ruta_base = os.path.dirname(ruta_actual)
+
+        # Intentamos obtener el resultado de la GUI de configuración
         resultado = lanzar_gui_configuracion(ruta_base)
 
         if resultado.get("ok"):
-            print("La IP se ha cambiado correctamente. Reiniciando para ajustar la nueva configuración")
-            script_path = os.path.join(ruta_base, "iniciar_juegos.sh")
-
-            # Ejecutar el script .sh
             try:
-                subprocess.run(["gnome-terminal", "--", "bash", script_path])
-                print("Script iniciar_juegos.sh ejecutado correctamente.")
-            except subprocess.CalledProcessError as e:
-                print(f"Error al ejecutar el script: {e}")
+                # Construimos la ruta absoluta al script
+                script_path = os.path.abspath(os.path.join(ruta_base, "iniciar_juegos.sh"))
+                print(f"Reiniciando sistema desde: {script_path}")
+
+                # Lanzamos la terminal usando 'nohup'.
+                # Esto desvincula el proceso del terminal actual de forma segura.
+                subprocess.Popen(
+                    ["nohup", "gnome-terminal", "--", "bash", script_path],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True
+                )
+
+                # Damos un margen mínimo para que el sistema procese el Popen
+                self.time.sleep(0.5)
+
+                # Cierre total
+                print("Cerrando instancia antigua...")
+                os._exit(0)
+
+            except Exception as e:
+                # Ahora el except está correctamente dentro del bloque try
+                print(f"Error al relanzar el script: {e}")
+                if hasattr(self, 'ui'):
+                    QMessageBox.critical(self.ui, "Error", f"No se pudo relanzar el script:\n{e}")
         else:
-            print("No se cambió la IP. No se realizará ninguna acción.")
+            print("Configuración cancelada o sin cambios en la IP.")
 
 
     def verificar_ping(self, indicador: QFrame):

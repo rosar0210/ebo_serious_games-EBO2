@@ -31,10 +31,12 @@ from PySide6.QtCore import Qt, QTimer, QFile, Signal, Slot
 import threading
 import time
 import sys
+import requests
+from dotenv import load_dotenv
 
 # Rutas comunes
 UI_SEL = "../../igs/seleccion_menu.ui"
-UI_CONV = "../../igs/conversacional_menu.ui"
+UI_CONV = "../../igs/conversacional_menu2.ui"
 UI_ST = "../../igs/storytelling_menu.ui"
 UI_RESP = "../../igs/respuesta_gpt.ui"
 LOGO_1 = "../../igs/logos/logo_euro.png"
@@ -43,6 +45,14 @@ LOGO_2 = "../../igs/logos/robolab.png"
 sys.path.append('/opt/robocomp/lib')
 console = Console(highlight=False)
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+repo_root = os.path.abspath(os.path.join(script_dir, "../../.."))
+ruta_env = "/home/rosa/ebo_serious_games/EBO2/ebo_gpt/.env"
+
+if os.path.exists(ruta_env):
+    load_dotenv(ruta_env)
+else:
+    print(f"⚠️ Advertencia: No se encontró el archivo .env en {ruta_env}")
 
 # If RoboComp was compiled with Python bindings you can use InnerModel in Python
 # import librobocomp_qmat
@@ -61,6 +71,14 @@ class SpecificWorker(GenericWorker):
         else:
             self.timer.timeout.connect(self.compute)
             self.timer.start(self.Period)
+
+        #Creamos directorio (si no existe) para almacenar los archivos de las conversaciones en memoria
+        self.base_path = os.path.dirname(os.path.abspath(__file__))
+        self.memoria_path = os.path.join(self.base_path, "memoria")
+
+        if not os.path.exists(self.memoria_path):
+            os.makedirs(self.memoria_path)
+            print(f"Carpeta creada exitosamente en: {self.memoria_path}")
 
         self.flag_test = True
         print("COMPONENTE STORYTELLING INICIADO")
@@ -102,6 +120,8 @@ class SpecificWorker(GenericWorker):
         self.familiares = ""
 
         self.personalidad = ""
+
+        self.historial_charla = []
 
     ### CARGADOR DE UIs
     def load_ui(self, ui_path, ui_number, logo_paths=None, botones=None,
@@ -204,25 +224,203 @@ class SpecificWorker(GenericWorker):
         self.cerrar_ui(1)
         self.lanzar_ui3()
 
-    #### UI 2 #### ################ ############################################### ################
+    #### UI 2 ####
     def conversational_ui(self):
         def set_personalidades(ui):
             ui.comboBox.clear()
             ui.comboBox.addItems([
-                "Seleccionar Personalidad...", "EBO_simpatico", "EBO_cacereño", "EBO_colegios", "modo_memoria", "modo_cultural", "modo_ludico", "modo_cotidiano"
+                "Seleccionar Personalidad...", "EBO_simpatico", "EBO_cacereño",
+                "EBO_colegios", "modo_memoria", "modo_cultural",
+                "modo_ludico", "modo_cotidiano"
             ])
 
-        return self.load_ui(
+        ui = self.load_ui(
             UI_CONV, ui_number=2,
             logo_paths={"label": LOGO_1, "label_2": LOGO_2},
-            botones={"startGame": self.startGame_clicked_conv},
+
+            botones={
+                "startGame": self.startGame_clicked_conv,
+                "startGame_user": self.startGame_clicked_conv
+            },
             ayuda_button="ayuda_button",
             back_button="back_button",
             combo_setter=set_personalidades
         )
 
+        #Cargar los usuarios existentes en el ComboBox
+        self.actualizar_combo_usuarios(ui)
+        ui.comboBox_user.currentIndexChanged.connect(lambda: self.usuario_seleccionado(ui))
+
+        return ui
+
+    def actualizar_combo_usuarios(self, ui):
+        ui.comboBox_user.blockSignals(True)  #Evita que se dispare el evento al limpiar
+        ui.comboBox_user.clear()
+        ui.comboBox_user.addItem("Nuevo Usuario...")  # La primera opción siempre será para crear uno nuevo
+
+        if os.path.exists(self.memoria_path):
+            for archivo in os.listdir(self.memoria_path):
+                if archivo.endswith(".json"):
+                    #Limpiamos el nombre del archivo para mostrarlo
+                    nombre = archivo.replace(".json", "").replace("_", " ").title()
+                    ui.comboBox_user.addItem(nombre)
+        ui.comboBox_user.blockSignals(False)
+
+    def usuario_seleccionado(self, ui):
+        seleccion = ui.comboBox_user.currentText()
+
+        if seleccion == "Nuevo Usuario..." or not seleccion:
+            # Si es nuevo, limpiamos todos los campos para que el terapeuta los rellene
+            ui.nombreE.clear()
+            ui.aficionE.clear()
+            ui.edadE.clear()
+            ui.famiE.clear()
+            ui.nombreE.setReadOnly(False)  #Permitimos escribir el nombre
+            ui.nombreE.setStyleSheet("")
+        else:
+            # Si es un usuario existente, cargamos sus datos
+            datos = self.cargar_memoria_usuario(seleccion)
+            if datos:
+                ui.nombreE.setPlainText(datos.get("nombre", seleccion))
+                ui.nombreE.setReadOnly(True)  # Bloqueamos el nombre para que no lo editen por error
+                ui.aficionE.setPlainText(datos.get("aficiones", ""))
+                ui.edadE.setPlainText(datos.get("edad", ""))
+                ui.famiE.setPlainText(datos.get("familiares", ""))
+                ui.nombreE.setStyleSheet("background-color: #d4edda;")  #Fondo verde de éxito
+
+    def verificar_usuario_existente(self, ui):
+        nombre = ui.nombreE.toPlainText().strip()
+        if len(nombre) < 3: return  #Evitar buscar con una sola letra
+
+        datos = self.cargar_memoria_usuario(nombre)
+        if datos:
+            ui.aficionE.setPlainText(datos.get("aficiones", ""))
+            ui.edadE.setPlainText(datos.get("edad", ""))
+            ui.famiE.setPlainText(datos.get("familiares", ""))
+            #Feedback visual de que lo recordamos
+            ui.nombreE.setStyleSheet("background-color: #D4EDDA;")
+        else:
+            ui.nombreE.setStyleSheet("")
+
+    def guardar_memoria_usuario(self, nombre):
+        if not nombre: return
+
+        #Primero, recuperamos la síntesis anterior (si la hubiera) para no borrarla al guardar
+        datos_antiguos = self.cargar_memoria_usuario(nombre)
+        sintesis = datos_antiguos.get("sintesis_conversacion", "No hay registros previos.") if datos_antiguos else "No hay registros previos."
+
+        datos = {
+            "nombre": self.nombre_jugador,
+            "aficiones": self.aficiones,
+            "edad": self.edad,
+            "familiares": self.familiares,
+            "ultima_sesion": time.strftime("%d-%m-%Y %H:%M:%S"),
+            "personalidad_habitual": self.personalidad,
+            "sintesis_conversacion": sintesis #Se guarda la síntesis
+        }
+
+        nombre_limpio = nombre.lower().strip().replace(" ", "_")
+        ruta_archivo = os.path.join(self.memoria_path, f"{nombre_limpio}.json")
+
+        try:
+            with open(ruta_archivo, 'w', encoding='utf-8') as f:
+                json.dump(datos, f, ensure_ascii=False, indent=4)
+        except Exception as e:
+            print(f"Error al guardar la memoria: {e}")
+
+    def cargar_memoria_usuario(self, nombre):
+        nombre_limpio = nombre.lower().strip().replace(" ", "_")
+        ruta_archivo = os.path.join(self.memoria_path, f"{nombre_limpio}.json")
+
+        if os.path.exists(ruta_archivo):
+            try:
+                with open(ruta_archivo, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except Exception as e:
+                print(f"Error al leer memoria: {e}")
+        return None
+
+    def actualizar_sintesis_memoria(self, nombre, resumen_nuevo):
+        """Añade los puntos importantes de hoy al JSON del usuario"""
+        if not nombre: return
+
+        datos = self.cargar_memoria_usuario(nombre)
+        if datos:
+            # Limpiar el mensaje por defecto si existe
+            sintesis_actual = datos.get("sintesis_conversacion", "")
+            if sintesis_actual == "No hay registros previos.":
+                sintesis_actual = ""
+
+            # Formato: Añadimos la fecha corta y el resumen para tener un histórico
+            fecha_hoy = time.strftime("%d/%m")
+            nueva_sintesis = f"{sintesis_actual} | [Sesión {fecha_hoy}]: {resumen_nuevo}".strip(" |")
+
+            # Para no saturar al GPT, si la memoria se hace muy larga (más de 4 sesiones),
+            # podríamos cortar lo más antiguo, pero por ahora lo concatenamos.
+            datos["sintesis_conversacion"] = nueva_sintesis
+
+            # Sobrescribimos el archivo JSON
+            nombre_limpio = nombre.lower().strip().replace(" ", "_")
+            ruta_archivo = os.path.join(self.memoria_path, f"{nombre_limpio}.json")
+
+            try:
+                with open(ruta_archivo, 'w', encoding='utf-8') as f:
+                    json.dump(datos, f, ensure_ascii=False, indent=4)
+                print(f"✅ Síntesis de la sesión guardada para {nombre}")
+            except Exception as e:
+                print(f"❌ Error al actualizar la síntesis: {e}")
+
+    def generar_resumen_background(self, nombre, historial):
+        if not historial:
+            return
+
+        print(f"Generando síntesis automática de {len(historial)} intervenciones...")
+        texto_usuario = " - ".join(historial)
+
+        api_key = os.getenv("OPENAI_API_KEY")
+
+        if not api_key:
+            print("❌ ERROR: No se ha encontrado la OPENAI_API_KEY en el entorno.")
+            return
+
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+
+        # Le pedimos a GPT que resuma estrictamente la charla
+        data = {
+            "model": "gpt-5-mini",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "Eres un asistente clínico. Resume la intervención en UNA SOLA FRASE directa y objetiva."
+                },
+                {
+                    "role": "user",
+                    "content": f"Sesión del paciente: {texto_usuario}"
+                }
+            ],
+            "max_completion_tokens": 1500,
+            "response_format": {"type": "text"}
+        }
+
+        try:
+            response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data)
+            if response.status_code == 200:
+                resumen_final = response.json()["choices"][0]["message"]["content"].strip()
+                self.actualizar_sintesis_memoria(nombre, resumen_final)
+                print(f"SÍNTESIS CREADA: {resumen_final}")
+            else:
+                print(f"Error de API al resumir: {response.text}")
+        except Exception as e:
+            print(f"Error de conexión al generar resumen automático: {e}")
+
     def startGame_clicked_conv(self):
+        #Preparamos los datos base y la memoria episódica (se guarda en self.user_info)
         self.setDatos()
+        memoria_base = self.user_info  # Guardamos la memoria para que no se borre
+
         self.personalidad = self.ui2.comboBox.currentText()
         if not self.personalidad or self.personalidad == "Seleccionar Personalidad...":
             print("Por favor selecciona una personalidad.")
@@ -236,53 +434,76 @@ class SpecificWorker(GenericWorker):
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.No
             )
-
-            # Si el usuario dice que No, cancelamos el inicio del juego
             if respuesta == QMessageBox.No:
                 return
 
+        #Juntamos la Personalidad con la Memoria
         if self.personalidad == "EBO_colegios":
-            self.user_info = f"Estas con la clase de {self.nombre_jugador}. Presentate y saluda a todos y todas, y diles que estas aqui para responder todas sus preguntas"
+            # En colegios no usamos memoria episódica individual
+            self.user_info = f"Estas con la clase de {self.nombre_jugador}. Presentate y saluda a todos y todas, y diles que estas aqui para responder todas sus preguntas."
 
-        if self.personalidad.startswith("modo_"):
-            self.user_info = (f"Los datos del usuario con el que vas a hablar son los siguientes. "
-                              f"Nombre: {self.nombre_jugador}. "
-                              f"Tema de conversación del día: {self.aficiones}. "
-                              f"Saludale e inicia la conversación adaptandote al tema.")
+        elif self.personalidad.startswith("modo_"):
+            # Unimos la memoria recuperada con las instrucciones del modo de juego
+            self.user_info = (f"{memoria_base}\n\n"
+                              f"IMPORTANTE: Hoy vas a actuar en {self.personalidad}. "
+                              f"El tema principal de conversación de hoy será: {self.aficiones}. "
+                              f"Inicia la conversación saludando y usando la información que recuerdas de la sesión anterior.")
+        else:
+            # Para EBO_simpatico o cacereño, la memoria base ya es perfecta
+            self.user_info = memoria_base
 
-        print("-------------------------------------------------------------------")
+        # 3. CHIVATO PARA LA TERMINAL (Para comprobar que funciona)
+        print("\n" + "=" * 50)
+        print("MEMORIA ENVIADA AL CEREBRO DE EBO:")
         print(self.user_info)
-        print("-------------------------------------------------------------------")
+        print("=" * 50 + "\n")
 
         self.ui2.nombreE.clear()
         self.ui2.aficionE.clear()
         self.ui2.edadE.clear()
         self.ui2.famiE.clear()
-        # self.ui2.startGame.setEnabled(False)
 
         print("Iniciando juego con los datos seleccionados")
         self.cerrar_ui(2)
-        # SET GAME INFO
+
+        # SET GAME INFO (Enviamos al Proxy)
         self.gpt_proxy.setGameInfo(self.personalidad, self.user_info)
         self.lanzar_ui4()
         self.ui4.text_info.setText("EBO comenzará a hablar en breve")
+
         # START CHAT
         self.gpt_proxy.startChat()
         self.ui4.text_info.setText("Introduzca respuesta")
 
     def setDatos(self):
-        self.nombre_jugador = self.ui2.nombreE.toPlainText()
+        self.nombre_jugador = self.ui2.nombreE.toPlainText().strip()
         self.aficiones = self.ui2.aficionE.toPlainText()
         self.edad = self.ui2.edadE.toPlainText()
         self.familiares = self.ui2.famiE.toPlainText()
 
-        self.user_info = (f"Los datos del usuario con el que vas a hablar son los siguientes. "
-                          f"Nombre: {self.nombre_jugador}. "
-                          f"Edad: {self.edad}. "
-                          f"Aficiones: {self.aficiones}. "
-                          f"Familiares: {self.familiares}. "
-                          f"Presentate, saludale e inicia la conversación adaptandote a sus aficiones. Más adelante puedes preguntarle por sus aficiones"
-                          )
+        self.guardar_memoria_usuario(self.nombre_jugador)
+
+        seleccion_combo = self.ui2.comboBox_user.currentText()
+        es_nuevo = (seleccion_combo == "Nuevo Usuario...")
+
+        if es_nuevo:
+            prefijo = "Es la primera vez que hablas con este usuario. Preséntate amablemente y conócele."
+        else:
+            datos_antiguos = self.cargar_memoria_usuario(self.nombre_jugador)
+
+            # Extraemos la síntesis de forma segura y aplicamos el SÚPER PROMPT
+            if datos_antiguos and "sintesis_conversacion" in datos_antiguos and datos_antiguos["sintesis_conversacion"] != "No hay registros previos.":
+                sintesis = datos_antiguos["sintesis_conversacion"]
+                prefijo = (f"Ya conoces a este usuario de sesiones anteriores. Salúdale con mucha alegría. "
+                           f"Acabas de recordar esta información sobre él/ella: {sintesis}. "
+                           f"REGLA OBLIGATORIA: Integra esta información de forma muy natural y fluida en la charla para preguntarle qué tal le va, no se la tienes que recordar continuamente. "
+                           f"NUNCA leas las fechas, NUNCA digas la palabra 'sesión', ni 'anoté esto', ni leas corchetes. "
+                           f"Finge que esos recuerdos te acaban de venir a la mente espontáneamente como le pasaría a un buen amigo, pero no todo el rato.")
+            else:
+                prefijo = "Ya conoces a este usuario, pero no tienes recuerdos específicos de la última sesión. Salúdale como a un viejo amigo, pero no le digas que no recuerdas nada."
+
+        self.user_info = (f"{prefijo} Sus datos actuales son: Nombre: {self.nombre_jugador}. "
+                          f"Edad: {self.edad}. Aficiones: {self.aficiones}. Familiares: {self.familiares}.")
 
     #### UI 3 #### ################ ############################################### ################
     def storytelling_ui(self):
@@ -400,14 +621,12 @@ class SpecificWorker(GenericWorker):
         return ui
 
     def enviar_clicked(self):
-        if self.autonomo:
-            print("El envío manual está bloqueado: Modo Autónomo activo.")
-            return
-
+        if self.autonomo: return
         mensaje = self.ui4.respuesta.toPlainText()
+        if not mensaje: return
 
-        if not mensaje:
-            return
+        # Guardamos el mensaje en el historial
+        self.historial_charla.append(mensaje)
 
         self.ui4.respuesta.clear()  # Limpiar el QTextEdit
         self.ui4.respuesta.clearFocus()  # Forzar que pierda el foco
@@ -420,14 +639,27 @@ class SpecificWorker(GenericWorker):
         self.ui4.text_info.setText("Introduzca respuesta")
 
     def salir_clicked(self):
+        try:
+            self.speech_proxy.say(
+                f"He disfrutado mucho hoy, {self.nombre_jugador}. ¿Te gustaría que volvamos a jugar pronto?")
+        except:
+            pass
+
         respuesta = QMessageBox.question(
             self.ui4, "Confirmar salida", "¿Estás seguro de que quieres salir?",
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No
         )
 
         if respuesta == QMessageBox.Yes:
-            # MODIFICACIÓN CLAVE APLICADA AQUÍ
-            # Detener el modo autónomo de forma segura antes de cerrar todo
+
+            if self.nombre_jugador and hasattr(self, 'historial_charla') and len(self.historial_charla) > 0:
+                # Lo lanzamos en un Hilo (Thread) para que la pantalla del ordenador no se quede congelada esperando a GPT
+                threading.Thread(
+                    target=self.generar_resumen_background,
+                    args=(self.nombre_jugador, self.historial_charla),
+                    daemon=True
+                ).start()
+
             if self.autonomo:
                 self.detener_autonomo()
 
@@ -436,7 +668,7 @@ class SpecificWorker(GenericWorker):
             QApplication.processEvents()
             self.cerrar_ui(4)
             self.gestorsg_proxy.LanzarApp()
-            # Este mensaje es el código de salida para GPT
+
             self.gpt_proxy.continueChat("03827857295769204")
         else:
             pass
@@ -526,7 +758,10 @@ class SpecificWorker(GenericWorker):
                 time.sleep(0.1)
                 continue
 
+            self.historial_charla.append(text)
+
             self._asr_lock.acquire()
+
             try:
                 self.gpt_proxy.continueChat(text)
 

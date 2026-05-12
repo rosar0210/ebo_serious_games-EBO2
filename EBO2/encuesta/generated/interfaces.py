@@ -4,13 +4,13 @@ import IceStorm
 from rich.console import Console, Text
 console = Console()
 
+Ice.loadSlice("-I ./generated/ --all ./generated/Encuesta.ice")
+import RoboCompEncuesta
 Ice.loadSlice("-I ./generated/ --all ./generated/GestorSG.ice")
 import RoboCompGestorSG
-Ice.loadSlice("-I ./generated/ --all ./generated/TherapistPanel.ice")
-import RoboCompTherapistPanel
 
 
-import therapistpanelI
+import encuestaI
 
 class Publishes:
     def __init__(self, ice_connector:Ice.CommunicatorI, topic_manager, parameters):
@@ -99,7 +99,7 @@ class Implements:
     def __init__(self, ice_connector:Ice.CommunicatorI, default_handler, parameters):
         self.ice_connector = ice_connector
 
-        self.therapistpanel = self.create_adapter("TherapistPanel", therapistpanelI.TherapistPanelI(default_handler, ""), parameters["Endpoints"]["TherapistPanel"])
+        self.encuesta = self.create_adapter("Encuesta", encuestaI.EncuestaI(default_handler, ""), parameters["Endpoints"]["Encuesta"])
 
     def create_adapter(self, property_name, interface_handler, endpoint_string):
         try:

@@ -11,3 +11,4 @@ modo_cotidiano;profiles/modo_cotidiano.prompt.txt
 modo_cultural;profiles/modo_cultural.prompt.txt
 modo_ludico;profiles/modo_ludico.prompt.txt
 modo_memoria;profiles/modo_memoria.prompt.txt
+EBO_CanSat;profiles/EBO_CanSat.prompt.txt

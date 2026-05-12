@@ -1,16 +1,16 @@
-import "TherapistPanel.idsl";
+import "Encuesta.idsl";
 import "GestorSG.idsl";
 
-Component therapistPanel
+Component encuesta
 {
     Communications
     {
-        implements TherapistPanel;
+        implements Encuesta;
         requires GestorSG;
+        
     };
     language python;
     gui Qt(QWidget);
-    //options dsr;
 
 };
 

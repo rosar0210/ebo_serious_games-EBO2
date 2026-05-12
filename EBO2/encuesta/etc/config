@@ -1,9 +1,8 @@
-# Endpoints for implements interfaces
-Endpoints.TherapistPanel = tcp -p 23540
 # Proxies for required interfaces
 Proxies.GestorSG = gestorsg:tcp -h localhost -p 16299
 
-
+# Endpoints for implements interfaces
+Endpoints.Encuesta = tcp -p 23640
 
 
 

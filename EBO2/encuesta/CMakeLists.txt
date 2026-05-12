@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-PROJECT(  therapistPanel )
+PROJECT(  encuesta )
 
 
 #Checks Paths
@@ -20,7 +20,7 @@ SET(RC_COMPONENT_DEVEL_PATH ${CMAKE_CURRENT_SOURCE_DIR} CACHE STRING "component 
 SET(RC_OUTPUT_ICE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/generated)
 
 #Generate ices
-ROBOCOMP_IDSL_TO_ICE(GestorSG GestorSG TherapistPanel TherapistPanel )
+ROBOCOMP_IDSL_TO_ICE(Encuesta Encuesta GestorSG GestorSG )
 
 
 ADD_SUBDIRECTORY( src )
@@ -44,7 +44,7 @@ WRAP_PYTHON_UI( mainUI )
 add_custom_target(create_symlink ALL
   COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/bin
   COMMAND ${CMAKE_COMMAND} -E create_symlink
-    ${CMAKE_CURRENT_SOURCE_DIR}/generated/therapistPanel.py
-    ${CMAKE_CURRENT_SOURCE_DIR}/bin/therapistPanel
+    ${CMAKE_CURRENT_SOURCE_DIR}/generated/encuesta.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/bin/encuesta
   COMMENT "Creando enlace simbólico en bin/"
-  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/generated/therapistPanel.py )
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/generated/encuesta.py )

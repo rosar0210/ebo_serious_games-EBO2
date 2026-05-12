@@ -1,16 +1,17 @@
 #!/bin/bash
-pkill -f "python3 generated/therapistPanel.py"  # Limpia procesos colgados
+pkill -f "python3 generated/therapistPanel.py"
+pkill -f "python3 generated/app_juegos.py" # También limpiamos la app por si acaso
 
-export ROBOCOMP=/opt/robocomp # para evitar logs incomodos
+export ROBOCOMP=$HOME/robocomp/core
 
-# Obtener la ruta del directorio donde se encuentra el script
+# Obtener la ruta del directorio
 BASE_DIR="$(dirname "$(realpath "$0")")"
 
-# Ejecutar primero python3 reiniciar.py y esperar 1 segundo
+# Ejecutar reiniciar.py
 python3 "$BASE_DIR/reiniciar.py"
 sleep 1
 
-# Definir las rutas y los nombres de los scripts a ejecutar
+# Definir las rutas
 declare -A rutas
 declare -A scripts
 
@@ -26,6 +27,7 @@ scripts["SimonSay"]="simonSay.py"
 rutas["Storytelling"]="$BASE_DIR/storytelling"
 scripts["Storytelling"]="storytelling.py"
 
+# CAMBIO: Ahora APP_JUEGOS está en la lista de los que se lanzan desde generated
 rutas["APP_JUEGOS"]="$BASE_DIR/app_juegos"
 scripts["APP_JUEGOS"]="app_juegos.py"
 
@@ -35,33 +37,32 @@ scripts["EBO_APP"]="ebo_app.py"
 rutas["therapistPanel"]="$BASE_DIR/therapistPanel"
 scripts["therapistPanel"]="therapistPanel.py"
 
-# Función para abrir una pestaña en gnome-terminal con entorno virtual
+rutas["encuesta"]="$BASE_DIR/encuesta"
+scripts["encuesta"]="encuesta.py"
+
+# Función mejorada
 function abrir_pestana {
-    if [ "$2" == "therapistPanel" ]; then
-        # CASO 1: Es el Panel del Terapeuta (carpeta generated + venv)
-        gnome-terminal --tab -- bash -c "
-            cd '$1' &&
-            echo 'Activando games_venv...' &&
-            source '$BASE_DIR/games_venv/bin/activate' &&
-            echo 'Iniciando Therapist Panel en generated...' &&
-            python3 generated/$3 etc/config;
-            exec bash
-        "
-    else      
-        # CASO 2: Resto de componentes (carpeta src + venv)
-        gnome-terminal --tab -- bash -c "
-            cd '$1' &&
-            echo 'Activando games_venv...' &&
-            source '$BASE_DIR/games_venv/bin/activate' &&
-            echo 'Ejecutando en $2' &&
-            python3 src/$3 etc/config;
-            exec bash
-        "
+    local ruta="$1"
+    local nombre="$2"
+    local script="$3"
+    local subcarpeta="src"
+
+    # Si es el Panel o la App de Juegos, usamos 'generated'
+    if [[ "$nombre" == "therapistPanel" || "$nombre" == "APP_JUEGOS" || "$nombre" == "encuesta" ]]; then
+        subcarpeta="generated"
     fi
+
+    gnome-terminal --tab -- bash -c "
+        cd '$ruta' &&
+        echo 'Activando games_venv...' &&
+        source '$BASE_DIR/games_venv/bin/activate' &&
+        echo 'Iniciando $nombre desde $subcarpeta...' &&
+        python3 $subcarpeta/$script etc/config;
+        exec bash
+    "
 }
 
-# Iterar sobre las rutas y abrir pestañas
+# Iterar sobre las rutas
 for nombre in "${!rutas[@]}"; do
     abrir_pestana "${rutas[$nombre]}" "$nombre" "${scripts[$nombre]}"
 done
-

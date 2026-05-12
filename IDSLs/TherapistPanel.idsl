@@ -1,0 +1,6 @@
+module RoboCompTherapistPanel{
+	interface TherapistPanel{
+		void StartPanel();
+		void updateGameStatus(string gameName, string userName, string current);
+  };
+};

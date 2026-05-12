@@ -1,0 +1,5 @@
+module RoboCompEncuesta{
+	interface Encuesta{
+		void StartSurvey();
+  };
+};

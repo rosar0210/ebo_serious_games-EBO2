@@ -1,0 +1,17 @@
+rec_facial/
+mimica
+
+# Ignorar el entorno virtual de Python
+games_venv/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Ignorar archivos de configuración del sistema o IDEs
+.vscode/
+.idea/
+.DS_Store
+
+# Ignorar claves secretas
+.env

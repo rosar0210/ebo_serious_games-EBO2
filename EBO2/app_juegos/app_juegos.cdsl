@@ -2,13 +2,15 @@ import "GestorSG.idsl";
 import "JuegoSimonSay.idsl";
 import "Pasapalabra.idsl";
 import "StoryTelling.idsl";
+import "TherapistPanel.idsl";
+import "Encuesta.idsl";
 
 Component app_juegos
 {
     Communications
     {
         implements GestorSG;
-        requires JuegoSimonSay, Pasapalabra, StoryTelling;
+        requires JuegoSimonSay, Pasapalabra, StoryTelling, TherapistPanel, Encuesta;
     };
     language python;
     gui Qt(QWidget);

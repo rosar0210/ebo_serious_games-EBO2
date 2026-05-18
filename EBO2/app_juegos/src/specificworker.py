@@ -28,6 +28,12 @@ from genericworker import GenericWorker
 import os
 import subprocess
 import sys
+from pathlib import Path
+
+ruta_src = Path(__file__).resolve().parent.parent / 'src'
+print(ruta_src)
+sys.path.append(str(ruta_src))
+
 from config_ips import lanzar_gui_configuracion
 
 sys.path.append('/opt/robocomp/lib')
@@ -41,9 +47,11 @@ console = Console(highlight=False)
 
 
 class SpecificWorker(GenericWorker):
-    def __init__(self, proxy_map, startup_check=False):
-        super(SpecificWorker, self).__init__(proxy_map)
-        self.Period = 2000
+    def __init__(self, proxy_map, configData, startup_check=False):
+        super(SpecificWorker, self).__init__(proxy_map, configData)
+        print(f"DEBUG - Atributos actuales: {[a for a in dir(self) if '_proxy' in a]}")
+        self.hide()
+        self.Period = 100
         if startup_check:
             self.startup_check()
         else:
@@ -53,6 +61,8 @@ class SpecificWorker(GenericWorker):
         self.juego_seleccionado = False
         self.ultimo_estado = None
         self.ebo_listo = False
+        self.gameName = "Selecciona Juego"
+        self.userName = "Usuario"
 
 
     def __del__(self):
@@ -67,12 +77,15 @@ class SpecificWorker(GenericWorker):
 
     @QtCore.Slot()
     def compute(self):
+        estado_para_terapeuta = "Seleccionando Juego"
         if self.juego_seleccionado is False and self.ui.isVisible() is False:
             estado_actual = "Relanzando APP"
         elif self.juego_seleccionado is True and self.ui.isVisible() is False:
             estado_actual = "Juego en Curso"
+            estado_para_terapeuta = f"Jugando a: {self.gameName}"
         else:
             estado_actual = "Juego en selección"
+            estado_para_terapeuta = "Seleccionando Juego"
 
         # Si el estado actual es diferente al último impreso, imprimimos
         if estado_actual != self.ultimo_estado:
@@ -80,6 +93,13 @@ class SpecificWorker(GenericWorker):
                 print("------------------------------")
             print(estado_actual)
             self.ultimo_estado = estado_actual  # Actualizamos el último estado
+
+            try:
+                # Enviamos: 1. El juego, 2. Un string vacío (ya que no hay usuario), 3. El estado
+                self.therapistpanel_proxy.updateGameStatus(self.gameName, "", estado_para_terapeuta)
+            except Exception:
+                # Si el panel no está abierto, ignoramos para no saturar la consola
+                pass
 
         return True
 
@@ -108,6 +128,8 @@ class SpecificWorker(GenericWorker):
         ui.simon_button.clicked.connect(self.simon_clicked)
         ui.pasapalabra_button.clicked.connect(self.pasapalabra_clicked)
         ui.ip_button.clicked.connect(self.configurar_ip)
+        ui.therapist_button.clicked.connect(self.therapist_clicked)
+        ui.encuesta_button.clicked.connect(self.encuesta_clicked)
 
         ui.ayuda.hide()
         ui.ayuda_button.clicked.connect(self.ayuda_clicked)
@@ -127,28 +149,80 @@ class SpecificWorker(GenericWorker):
 
     def _launch_game(self, proxy_attr: str) -> None:
         if self.ebo_listo:
-            # Desactivamos y activamos el eventfilter antes y después de cerrar la ventana para que no se raye
-            self.ui.removeEventFilter(self)
-            self.ui.close()
-            self.ui.installEventFilter(self)
+            proxy = getattr(self, proxy_attr)
 
-            self.juego_seleccionado = True
-            getattr(self, proxy_attr).StartGame()
+            try:
+                if hasattr(self, 'therapistpanel_proxy'):
+                    # Enviamos el nombre del juego recién asignado
+                    self.therapistpanel_proxy.updateGameStatus(self.gameName, "Paciente", "Iniciando...")
+                    print(f"Enviado inmediato al panel: {self.gameName}")
+            except Exception as e:
+                print(f"Panel no disponible: {e}")
+
+            if proxy_attr == "therapistpanel_proxy":
+                # PARA EL TERAPEUTA: Solo lanzamos el panel, NO cerramos la UI
+                try:
+                    print("Lanzando Therapist Panel en paralelo...")
+                    proxy.ice_ping()
+                    proxy.StartPanel()
+                except Exception as e:
+                    print(f"ERROR: No se pudo conectar con el Panel: {e}")
+                    QMessageBox.critical(
+                        self.ui,
+                        "Error de Conexión",
+                        "El componente TherapistPanel no está en marcha. Por favor, inícielo primero."
+                    )
+            elif proxy_attr == "encuesta_proxy":
+                try:
+                    print("Lanzando Encuesta...")
+                    proxy.ice_ping()
+                    self.ui.removeEventFilter(self)
+                    self.ui.hide()
+                    self.ui.installEventFilter(self)
+
+                    proxy.StartSurvey()
+                except Exception as e:
+                    print(f"ERROR: No se pudo conectar con el Panel: {e}")
+                    QMessageBox.critical(
+                        self.ui,
+                        "Error de Conexión",
+                        "El componente Encuesta no está en marcha. Por favor, inícielo primero."
+                    )
+
+            else:
+                # PARA LOS JUEGOS: Cerramos la UI y marcamos juego en curso
+                print(f"Lanzando juego: {self.gameName}")
+                # Desactivamos y activamos el eventfilter antes y después de cerrar la ventana para que no se raye
+                self.ui.removeEventFilter(self)
+                self.ui.hide()
+                self.ui.installEventFilter(self)
+
+                self.juego_seleccionado = True
+                proxy.StartGame()
         else:
             QMessageBox.warning(
-                self.ui,  # parent
-                "Advertencia",  # título de la ventana
-                "Por favor, configura la IP de ebo."  # mensaje
+                self.ui,
+                "Advertencia",
+                "Por favor, configura la IP de ebo."
             )
 
     def story_clicked(self):
+        self.gameName = "Storytelling"
         self._launch_game("storytelling_proxy")
 
     def simon_clicked(self):
+        self.gameName = "Simón Dice"
         self._launch_game("juegosimonsay_proxy")
 
     def pasapalabra_clicked(self):
+        self.gameName = "Pasapalabra"
         self._launch_game("pasapalabra_proxy")
+
+    def therapist_clicked (self):
+        self._launch_game("therapistpanel_proxy")
+
+    def encuesta_clicked(self):
+        self._launch_game("encuesta_proxy")
 
     def ayuda_clicked(self):
         if self.ui.ayuda.isVisible():  # Verifica si está visible
@@ -269,6 +343,7 @@ class SpecificWorker(GenericWorker):
     #
     def GestorSG_LanzarApp(self):
         self.juego_seleccionado = False
+        self.ui.installEventFilter(self)
         self.centrar_ventana(self.ui)
         self.ui.show()
         QApplication.processEvents()
@@ -293,15 +368,24 @@ class SpecificWorker(GenericWorker):
 
 
     ######################
+    # From the RoboCompEncuesta you can call this methods:
+    # RoboCompEncuesta.void self.encuesta_proxy.StartSurvey()
+
+    ######################
     # From the RoboCompJuegoSimonSay you can call this methods:
-    # self.juegosimonsay_proxy.StartGame(...)
+    # RoboCompJuegoSimonSay.void self.juegosimonsay_proxy.StartGame()
 
     ######################
     # From the RoboCompPasapalabra you can call this methods:
-    # self.pasapalabra_proxy.StartGame(...)
+    # RoboCompPasapalabra.void self.pasapalabra_proxy.StartGame()
 
     ######################
     # From the RoboCompStoryTelling you can call this methods:
-    # self.storytelling_proxy.StartGame(...)
+    # RoboCompStoryTelling.void self.storytelling_proxy.StartGame()
+
+    ######################
+    # From the RoboCompTherapistPanel you can call this methods:
+    # RoboCompTherapistPanel.void self.therapistpanel_proxy.StartPanel()
+    # RoboCompTherapistPanel.void self.therapistpanel_proxy.updateGameStatus(str gameName, str userName, str current)
 
 

@@ -1,0 +1,84 @@
+{
+  "preguntas": [
+    {
+      "letra": "A",
+      "definicion": "Persona que viaja al espacio exterior en una nave espacial",
+      "respuesta": "Astronauta"
+    },
+    {
+      "letra": "B",
+      "definicion": "Componente que almacena la energía eléctrica para que el satélite funcione",
+      "respuesta": "Batería"
+    },
+    {
+      "letra": "C",
+      "definicion": "Vehículo con forma de cilindro diseñado para enviar satélites al espacio",
+      "respuesta": "Cohete"
+    },
+    {
+      "letra": "D",
+      "definicion": "Momento en el que el cohete se eleva desde la plataforma hacia el cielo",
+      "respuesta": "Despegue"
+    },
+    {
+      "letra": "G",
+      "definicion": "Fuerza que atrae a los objetos hacia la Tierra y que el cohete debe vencer",
+      "respuesta": "Gravedad"
+    },
+    {
+      "letra": "H",
+      "definicion": "Elemento químico muy ligero que se usa a menudo como combustible para cohetes",
+      "respuesta": "Hidrógeno"
+    },
+    {
+      "letra": "I",
+      "definicion": "Siglas de la Estación Espacial Internacional, un laboratorio en el espacio",
+      "respuesta": "ISS"
+    },
+    {
+      "letra": "L",
+      "definicion": "Satélite natural de la Tierra que se puede ver por las noches",
+      "respuesta": "Luna"
+    },
+    {
+      "letra": "M",
+      "definicion": "El cuarto planeta del sistema solar, conocido como el planeta rojo",
+      "respuesta": "Marte"
+    },
+    {
+      "letra": "O",
+      "definicion": "Trayectoria circular o elíptica que sigue un satélite alrededor de un planeta",
+      "respuesta": "Orbita"
+    },
+    {
+      "letra": "P",
+      "definicion": "Sistema de seguridad que se abre para frenar la caída del CanSat o de una cápsula",
+      "respuesta": "Paracaídas"
+    },
+    {
+      "letra": "R",
+      "definicion": "Vehículo robótico diseñado para explorar la superficie de otros planetas",
+      "respuesta": "Rover"
+    },
+    {
+      "letra": "S",
+      "definicion": "Aparato puesto en órbita para recoger información o permitir las comunicaciones",
+      "respuesta": "Satélite"
+    },
+    {
+      "letra": "T",
+      "definicion": "Envío de datos medidos por sensores desde el satélite hasta la Tierra",
+      "respuesta": "Telemetría"
+    },
+    {
+      "letra": "U",
+      "definicion": "Todo lo que existe: planetas, estrellas, galaxias y el espacio vacío",
+      "respuesta": "Universo"
+    },
+    {
+      "letra": "V",
+      "definicion": "La galaxia donde se encuentra nuestro sistema solar",
+      "respuesta": "Via Láctea"
+    }
+  ]
+}

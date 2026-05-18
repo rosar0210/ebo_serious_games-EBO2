@@ -3,21 +3,26 @@
 ################################################################################
 ## Form generated from reading UI file 'mainUI.ui'
 ##
-## Created by: Qt User Interface Compiler version 5.15.2
+## Created by: Qt User Interface Compiler version 6.10.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import *
-from PySide6.QtGui import *
-from PySide6.QtWidgets import *
-
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
+from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
+    QFont, QFontDatabase, QGradient, QIcon,
+    QImage, QKeySequence, QLinearGradient, QPainter,
+    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtWidgets import (QApplication, QFrame, QLabel, QPushButton,
+    QSizePolicy, QTextEdit, QWidget)
 
 class Ui_guiDlg(object):
     def setupUi(self, guiDlg):
         if not guiDlg.objectName():
             guiDlg.setObjectName(u"guiDlg")
-        guiDlg.resize(0, 0)
+        guiDlg.resize(755, 445)
         self.textEdit_2 = QTextEdit(guiDlg)
         self.textEdit_2.setObjectName(u"textEdit_2")
         self.textEdit_2.setGeometry(QRect(40, 50, 661, 221))
@@ -38,12 +43,12 @@ class Ui_guiDlg(object):
         self.label = QLabel(guiDlg)
         self.label.setObjectName(u"label")
         self.label.setGeometry(QRect(10, 280, 171, 161))
-        self.label.setPixmap(QPixmap(u"src/logo_euro.png"))
+        self.label.setPixmap(QPixmap(u"logo_euro.png"))
         self.label.setScaledContents(True)
         self.label_2 = QLabel(guiDlg)
         self.label_2.setObjectName(u"label_2")
         self.label_2.setGeometry(QRect(460, 290, 291, 151))
-        self.label_2.setPixmap(QPixmap(u"src/robolab.png"))
+        self.label_2.setPixmap(QPixmap(u"robolab.png"))
 
         self.retranslateUi(guiDlg)
 

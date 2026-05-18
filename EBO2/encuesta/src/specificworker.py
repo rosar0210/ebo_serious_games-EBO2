@@ -133,7 +133,9 @@ class SpecificWorker(GenericWorker):
         if event.type() == QtCore.QEvent.Close:
             if obj == self.ui:
                 self.finalizar_encuesta(self.respuesta)
-                self.hide()
+
+                event.ignore()
+                self.finalizar_encuesta(0)
             return True
 
         return super().eventFilter(obj, event)
@@ -175,8 +177,11 @@ class SpecificWorker(GenericWorker):
 
 
     def finalizar_encuesta(self, puntuacion):
-        self.guardar_csv(puntuacion)
+        if puntuacion != 0:
+            self.guardar_csv(puntuacion)
+        self.ui.removeEventFilter(self)
         self.ui.hide()
+        self.ui.installEventFilter(self)
 
         try:
             print("Volviendo al menú principal")
@@ -275,7 +280,7 @@ class SpecificWorker(GenericWorker):
         ui_obj = getattr(self, ui_nombre, None)
         if ui_obj:
             ui_obj.removeEventFilter(self)  # Desactiva el event filter
-            ui_obj.close()  # Cierra la ventana
+            ui_obj.hide()  # Oculta la ventana
             ui_obj.installEventFilter(self)  # Reactiva el event filter
         else:
             print(f"Error: {ui_nombre} no existe en la instancia.")
@@ -284,6 +289,8 @@ class SpecificWorker(GenericWorker):
     def handle_update_ui(self):
         """ Esta función se encarga de hacer visible la ventana """
         if self.ui:
+            self.ui.removeEventFilter(self)
+            self.ui.installEventFilter(self)
             self.ui.show()
             self.ui.raise_()
             self.ui.activateWindow()  # La pone al frente de todas las carpetas

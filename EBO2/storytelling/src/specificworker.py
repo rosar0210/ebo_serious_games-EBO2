@@ -231,7 +231,7 @@ class SpecificWorker(GenericWorker):
             ui.comboBox.addItems([
                 "Seleccionar Personalidad...", "EBO_simpatico", "EBO_cacereño",
                 "EBO_colegios", "modo_memoria", "modo_cultural",
-                "modo_ludico", "modo_cotidiano"
+                "modo_ludico", "modo_cotidiano", "EBO_CanSat"
             ])
 
         ui = self.load_ui(
@@ -441,6 +441,16 @@ class SpecificWorker(GenericWorker):
         if self.personalidad == "EBO_colegios":
             # En colegios no usamos memoria episódica individual
             self.user_info = f"Estas con la clase de {self.nombre_jugador}. Presentate y saluda a todos y todas, y diles que estas aqui para responder todas sus preguntas."
+
+        elif self.personalidad == "EBO_CanSat":
+            self.user_info = (f"Estas en la Base aérea de Talavera la Real, vas a hablar con alumnos de secundaria de {self.nombre_jugador}. Presentate y saluda a todos y todas, "
+                              f"y proponle hablar de los temas que te paso (no expliques nada sobre ellos hasta que no elijan tema, tampoco el formato de como hacerlo):"
+                              f"1. El problema de la basura espacial."
+                              f"2. Utilidad de los satélites."
+                              f"3. Colonización de Marte y la Luna."
+                              f"4. Cementerio de naves espaciales."
+                              f"5. El planeta más oscuro del Universo."
+                              f"6. ¿Qué pasa cuándo un satélite muere?")
 
         elif self.personalidad.startswith("modo_"):
             # Unimos la memoria recuperada con las instrucciones del modo de juego
